@@ -20,16 +20,14 @@
   
     <img id="jpgglitch" />
     
-    <canvas id="canvas" />
-    
     <script>
         // Forked from https://github.com/mutaphysis/smackmyglitchupjs
         // Thanks to http://www.nczonline.net/blog/2009/12/08/computer-science-in-javascript-base64-encoding/
         // Idea from http://blog.soulwire.co.uk/laboratory/flash/as3-bitmapdata-glitch-generator
         
         
-        var canvas = document.getElementById('canvas');
-        var ctx = canvas.getContext('2d');
+        // var canvas = document.getElementById('canvas');
+        // var ctx = canvas.getContext('2d');
         var jpgHeaderLength = 0;
         var base64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
         var base64Map = base64Chars.split("");
@@ -37,16 +35,21 @@
         
         var jpgglitch = document.getElementById('jpgglitch');
         
-        if (!window.atob) {
-          window.atob = function (str) {
-            return base64ToByteArray(str);
-          }
-        }
-        if (!window.btoa) {
-          window.btoa = function (arr) {
-            return byteArrayToBase64(arr);
-          }
-        }
+        var random = true;
+        var randomN = 3;
+        var glitchPos = 0.0;
+        var glitchVal = 0;
+        
+        // if (!window.atob) {
+        //   window.atob = function (str) {
+        //     return base64ToByteArray(str);
+        //   }
+        // }
+        // if (!window.btoa) {
+        //   window.btoa = function (arr) {
+        //     return byteArrayToBase64(arr);
+        //   }
+        // }
         
         function detectJpegHeaderSize(data) {
             var length = 417;
@@ -119,37 +122,26 @@
         }
         
         function glitchJpegBytes(strArr) {
-          var rnd = Math.floor(jpgHeaderLength + Math.random() * (strArr.length - jpgHeaderLength - 4));
-          strArr[rnd] = Math.floor(Math.random() * 256);
+          var percent = random ? Math.random() : glitchPos;
+          var pos = Math.floor(jpgHeaderLength + percent * (strArr.length - jpgHeaderLength - 4));
+          strArr[pos] = Math.floor(Math.random() * 256);
         }
         
-        function glitchJpeg() {
-            var glitchCopy = imgDataArr.slice();
-            for (var i = 0; i < 10; i++) {
-                glitchJpegBytes(glitchCopy);
-            }
-            var img = new Image();
-            img.onload = function() {
-                ctx.drawImage(img, 0, 0);
-                setTimeout(glitchJpeg, 50);
-            }
-            img.src = byteArrayToBase64(glitchCopy);
+        function glitchJpeg(data) {
+          if (!data) {
+            var data = jpgglitch.src;
+          }
+          var b = base64ToByteArray(data);
+          var bArr = b.slice();
+          headerLength = setJpgHeaderLength(bArr);
+          for (var i = 0; i < 3; i++) {
+            glitchJpegBytes(bArr);
+          }
+          var a = byteArrayToBase64(bArr);
+          
+          jpgglitch.src = a;
+          Meemoo.send("jpg", a);
         }
-        
-        // var initialImage = new Image();
-        // var imgDataArr;
-        // initialImage.onload = function() {
-        //     ctx.drawImage(initialImage, 0, 0);
-        //     var imgData = canvas.toDataURL("image/jpeg");
-        //     imgDataArr = base64ToByteArray(imgData);
-        //     detectJpegHeaderSize(imgDataArr);
-        //     glitchJpeg();
-        //     // console.log(imgData.substring(0,30));
-        //     // console.log(imgDataArr.slice(0, 30));
-        //     // console.log (img.src.substring(0,30));
-        // };
-        // initialImage.src = "./code.jpg";
-        
         
         //
         // Meemoo stuff
@@ -158,30 +150,60 @@
         Meemoo.setInfo({
           title: "jpgglitch",
           author: "mutaphysis + forresto",
-          description: "jpg to glitched jpg"
+          description: "jpg to glitched jpg, click image to set glitchPos"
         }).addInputs({
           jpg: {
-            action: function (data, e) {
-              var b = base64ToByteArray("data:image/jpeg;base64,"+data);
-              var bArr = b.slice();
-              headerLength = setJpgHeaderLength(bArr);
-              for (var i = 0; i < 3; i++) {
-                glitchJpegBytes(bArr);
-              }
-              var a = byteArrayToBase64(bArr);
-              
-              jpgglitch.src = ""+a;
+            action: glitchJpeg,
+            port: true,
+            type: "data:image/jpeg"
+          },
+          glitchPos: {
+            action: function (n) {
+              random = false;
+              glitchPos = n;
             },
             port: true,
-            type: "image/jpeg"
+            type: "number",
+            min: 0,
+            max: 1
+          },
+          glitchVal: {
+            action: function (n) {
+              random = false;
+              glitchVal = n;
+            },
+            port: true,
+            type: "int",
+            min: 0,
+            max: 255
+          },
+          random: {
+            action: function (i) {
+              random = true;
+              randomN = i;
+            },
+            port: true,
+            type: "int",
+            min: 0,
+            max: 100
           }
 
         }).addOutputs({
           jpg: { 
             port: true,
-            type: "image/jpeg"
+            type: "data:image/jpeg"
           }
         });
+        
+        // click to set glitchPos
+        jpgglitch.onclick = function (e) {
+          var pos = Math.max(0, Math.min(1, e.clientY / jpgglitch.height));
+          Meemoo.inputs.glitchPos(pos);
+          var val = Math.max(0, Math.min(255, Math.floor(e.clientX / jpgglitch.width * 255)));
+          Meemoo.inputs.glitchVal(val);
+          
+          glitchJpeg();
+        };
         
     </script>
 </body>
