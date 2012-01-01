@@ -154,7 +154,6 @@
         }).addInputs({
           jpg: {
             action: glitchJpeg,
-            port: true,
             type: "data:image/jpeg"
           },
           glitchPos: {
@@ -162,7 +161,6 @@
               random = false;
               glitchPos = n;
             },
-            port: true,
             type: "number",
             min: 0,
             max: 1
@@ -172,7 +170,6 @@
               random = false;
               glitchVal = n;
             },
-            port: true,
             type: "int",
             min: 0,
             max: 255
@@ -182,7 +179,6 @@
               random = true;
               randomN = i;
             },
-            port: true,
             type: "int",
             min: 0,
             max: 100
@@ -190,7 +186,6 @@
 
         }).addOutputs({
           jpg: { 
-            port: true,
             type: "data:image/jpeg"
           }
         });
